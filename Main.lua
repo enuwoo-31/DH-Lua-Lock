@@ -56,7 +56,21 @@ local function IsPlayerAlive(player)
     local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
     return humanoid and humanoid.Health > 0
 end
+local function IsVisible(targetPart)
+    local camera = workspace.CurrentCamera
+    local origin = camera.CFrame.Position
+    local direction = targetPart.Position - origin
 
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        game.Players.LocalPlayer.Character
+    }
+
+    local result = workspace:Raycast(origin, direction, params)
+
+    return result and result.Instance:IsDescendantOf(targetPart.Parent)
+end
 local function GetClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -71,7 +85,10 @@ local function GetClosestPlayer()
                 local screenPoint, onScreen = Workspace.CurrentCamera:WorldToViewportPoint(part.Position)
                 local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePosition).Magnitude
 
-                if onScreen and distance <= dhlock.fov and distance < shortestDistance then
+                if onScreen
+                   and distance <= dhlock.fov
+                   and distance < shortestDistance
+                 and (not dhlock.wallcheck or IsVisible(part)) then
                     closestPlayer = player
                     shortestDistance = distance
                 end
@@ -120,6 +137,7 @@ local function DrawFovCircle()
     if dhlock.showfov then
         if not fovCircle then
             fovCircle = Drawing.new("Circle")
+            fovCircle.Visible = true
             fovCircle.Radius = dhlock.fov
             fovCircle.Position = UserInputService:GetMouseLocation()
             fovCircle.Color = dhlock.fovcolorunlocked
