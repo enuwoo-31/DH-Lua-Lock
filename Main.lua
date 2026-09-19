@@ -120,6 +120,7 @@ local function DrawFovCircle()
     if dhlock.showfov then
         if not fovCircle then
             fovCircle = Drawing.new("Circle")
+            fovCircle.Visible = true
             fovCircle.Radius = dhlock.fov
             fovCircle.Position = UserInputService:GetMouseLocation()
             fovCircle.Color = dhlock.fovcolorunlocked
