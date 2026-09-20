@@ -32,7 +32,18 @@ local holdingKeybind = false
 local PREDICTION_MULTIPLIER = 0.0400
 
 local function IsValidKeybind(input)
-    return typeof(input) == "EnumItem" and (input.EnumType == Enum.KeyCode or input.EnumType == Enum.UserInputType)
+    return typeof(input) == "EnumItem"
+        and (input.EnumType == Enum.KeyCode or input.EnumType == Enum.UserInputType)
+end
+
+local function IsKeybindPressed(input)
+    if dhlock.keybind.EnumType == Enum.KeyCode then
+        return input.KeyCode == dhlock.keybind
+    elseif dhlock.keybind.EnumType == Enum.UserInputType then
+        return input.UserInputType == dhlock.keybind
+    end
+
+    return false
 end
 
 local function GetCurrentLockPart()
@@ -56,7 +67,21 @@ local function IsPlayerAlive(player)
     local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
     return humanoid and humanoid.Health > 0
 end
+local function IsVisible(targetPart)
+    local camera = workspace.CurrentCamera
+    local origin = camera.CFrame.Position
+    local direction = targetPart.Position - origin
 
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        game.Players.LocalPlayer.Character
+    }
+
+    local result = workspace:Raycast(origin, direction, params)
+
+    return result and result.Instance:IsDescendantOf(targetPart.Parent)
+end
 local function GetClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -120,6 +145,7 @@ local function DrawFovCircle()
     if dhlock.showfov then
         if not fovCircle then
             fovCircle = Drawing.new("Circle")
+            fovCircle.Visible = true
             fovCircle.Radius = dhlock.fov
             fovCircle.Position = UserInputService:GetMouseLocation()
             fovCircle.Color = dhlock.fovcolorunlocked
@@ -138,7 +164,7 @@ end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
 
-    if (input.UserInputType == dhlock.keybind or input.KeyCode == dhlock.keybind) and IsValidKeybind(dhlock.keybind) then
+    if (IsKeybindPressed(input)) and IsValidKeybind(dhlock.keybind) then
         holdingKeybind = true
         if dhlock.toggle then
             isAiming = not isAiming
@@ -147,7 +173,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if (input.UserInputType == dhlock.keybind or input.KeyCode == dhlock.keybind) and IsValidKeybind(dhlock.keybind) then
+    if (IsKeybindPressed(input)) and IsValidKeybind(dhlock.keybind) then
         holdingKeybind = false
     end
 end)
